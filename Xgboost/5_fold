@@ -1,0 +1,51 @@
+#5-fold new
+# Load data
+data = np.genfromtxt('all_transients_together_without_absolute_values.csv', delimiter=',')
+label = np.genfromtxt('all_labels_together.csv', delimiter=',')
+# np.random.seed(42)
+# indices = np.random.permutation(data.shape[0])
+# data = data[indices]
+# label = label[indices]
+# Separate features and labels
+# X_train = data[28:, 1:]
+# X_test = data[:28, 1:]
+# y_train = label[28:, 1]
+# y_test = label[:28, 1]
+# X_test = data[28:56, 1:]
+# y_test = label[28:56, 1]
+# X_train = np.concatenate((data[:28, 1:], data[56:, 1:]), axis=0)
+# y_train = np.concatenate((label[:28, 1], label[56:, 1]), axis=0)
+
+# X_test = data[56:84, 1:]
+# y_test = label[56:84, 1]
+# X_train = np.concatenate((data[:56, 1:], data[84:, 1:]), axis=0)
+# y_train = np.concatenate((label[:56, 1], label[84:, 1]), axis=0)
+
+# X_test = data[84:112, 1:]
+# y_test = label[84:112, 1]
+# X_train = np.concatenate((data[:84, 1:], data[112:, 1:]), axis=0)
+# y_train = np.concatenate((label[:84, 1], label[112:, 1]), axis=0)
+
+X_test = data[112:140, 1:]
+y_test = label[112:140, 1]
+X_train = np.concatenate((data[:112, 1:], data[140:, 1:]), axis=0)
+y_train = np.concatenate((label[:112, 1], label[140:, 1]), axis=0)
+# print(pd.DataFrame(data[112:140,0]))
+
+train_data = xgb.DMatrix(X_train, label=y_train)
+test_data = xgb.DMatrix(X_test, label=y_test)
+
+# # Step 11: Set the parameters for the XGBoost model
+params = {
+    'objective': 'binary:logistic',  # Use 'multi:softmax' for multi-class classification
+    'colsample_bytree':0.8,
+    'max_depth': 6,
+    'eta': 0.05,
+    'scale_pos_weight' :6
+}
+bst = xgb.train(params, train_data, num_boost_round=50)
+
+# # Step 13: Make predictions on the test set
+y_pred_prob = bst.predict(test_data)
+preds = pd.DataFrame(y_pred_prob)
+print(preds)
