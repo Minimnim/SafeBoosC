@@ -1,0 +1,40 @@
+# train the model on safeboosc data and test it on HIP data
+import numpy as np
+import pandas as pd
+import xgboost as xgb
+import statistics
+from sklearn.model_selection import cross_val_score
+from sklearn.metrics import accuracy_score
+from sklearn import metrics
+features_sb = np.genfromtxt('all_transients_xgb.csv', delimiter=',', skip_header= False)
+labels_sb = np.genfromtxt('IVH.csv', delimiter=',', skip_header= False)
+features_hip = np.genfromtxt('transient_without_clinical_final_true_order.csv', delimiter=',', skip_header= False)
+labels_hip = np.genfromtxt('whole_label_safeboosc.csv', delimiter=',', skip_header= False)
+# param = {'max_depth':3, 'eta':0.1, 'colsample_bytree':1, 'objective':'binary:logistic'}
+#num_run = 50
+#param = {'max_depth':4, 'min_child_weight':1, 'gamma':0,
+# 'colsample_bytree':0.9, 'eta':0.01, 'objective':'binary:logistic'}
+# param = {'max_depth':6, 'eta':0.05, 'colsample_bylevel':0.8,
+#                        'scale_pos_weight': 6,
+#          'objective':'binary:logistic'}
+# num_run = 50
+param = {'max_depth':12, 'eta':0.1, 'colsample_bytree':0.9,
+                       'scale_pos_weight': 2,
+         'objective':'binary:logistic'}
+num_run = 50
+test = xgb.DMatrix(features_hip[:,1:], label = labels_hip[:,1])
+train = xgb.DMatrix(features_sb[:,1:], label = labels_sb[:,1])
+model = xgb.train(param, train, num_run)
+prediction = model.predict(test)
+# pd.DataFrame(prediction)
+# print(prediction)
+auc = metrics.roc_auc_score(labels_hip[:,1], prediction)
+# null = []
+# for z in prediction:
+#   if z >= 0.5:
+#     null.append(1)
+#   if z < 0.5:
+#     null.append(0)
+# a = accuracy_score(labels_sb[:,1], null)
+# print(a)
+print(auc)
