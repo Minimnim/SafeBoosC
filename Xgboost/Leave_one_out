@@ -1,0 +1,58 @@
+#the leave-one-out method for transients
+import numpy as np
+import pandas as pd
+import xgboost as xgb
+from sklearn.metrics import matthews_corrcoef
+from sklearn import metrics
+from sklearn.metrics import roc_auc_score
+from scipy.stats import sem
+import statistics
+
+# param = {'max_depth':6, 'eta':0.05, 'colsample_bylevel':0.8,
+#                        'scale_pos_weight': 6,
+#          'objective':'binary:logistic'}
+# num_run = 50
+# param = {'max_depth':5, 'eta':0.01, 'colsample_bylevel':1, 'scale_pos_weight': 3,
+#          'objective':'binary:logistic'}
+# num_run = 200
+param = {'max_depth':5, 'eta':0.05, 'scale_pos_weight': 2, 'colsample_bylevel':0.9,
+         'objective':'binary:logistic'}
+num_run = 50
+#to open the file containing the features in columns and each row corresponds to one epoch; the first column is the ID
+data = np.genfromtxt('all_transients_together_without_absolute_values_exc78.csv', delimiter=',')
+pd.DataFrame(data)
+#to open the file containing the labels; the first column is the ID
+label = np.genfromtxt('all_labels_together_exc78.csv', delimiter=',')
+ids = data[:,0]
+ids = list(dict.fromkeys(ids))
+outcome = []
+feature_importance_per_iteration = []
+#leave-one-out method
+for x in ids:
+  test_data = data[data[:,0] == x]
+  train_data = data[data[:,0]!= x]
+  test_label = label[label[:,0] == x]
+  train_label = label[label[:,0] != x]
+  test_x = test_data[:,1:]
+  test_y = test_label[:,1]
+  train_x = train_data[:,1:]
+  train_y = train_label[:,1]
+  train = xgb.DMatrix(train_x, label = train_y)
+  test = xgb.DMatrix(test_x, label = test_y)
+  model = xgb.train(param, train, num_run)
+  # print(model.get_fscore())
+  # iteration_feature_importance = model.get_fscore()
+  # feature_importance_per_iteration.append(iteration_feature_importance)
+  preds = model.predict(test)
+  pd.DataFrame(preds)
+  a = statistics.mean(preds)
+  outcome.append(a)
+  print(a) #the probabilites
+
+#to calculate the AUC
+labell = np.genfromtxt('all_labels_together_exc78.csv', delimiter=',') #contains the labels for each baby
+labell = labell[:,1]
+pd.DataFrame(labell)
+auc = metrics.roc_auc_score(labell, outcome)
+print(auc)
+# print(feature_importance_per_iteration)
