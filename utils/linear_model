@@ -1,0 +1,30 @@
+# instead of xgboost, we use linear model to train safeboosc and test it on hip trial
+import numpy as np
+import pandas as pd
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import roc_auc_score
+
+# Load data
+features_sb = np.genfromtxt('all_transients_xgb.csv', delimiter=',', skip_header=False)
+labels_sb = np.genfromtxt('IVH.csv', delimiter=',', skip_header=False)
+features_hip = np.genfromtxt('transient_without_clinical_final_true_order.csv', delimiter=',', skip_header=False)
+labels_hip = np.genfromtxt('whole_label_safeboosc.csv', delimiter=',', skip_header=False)
+
+# Prepare data (removing the first column as in your original code)
+X_train = features_sb[:, 1:]
+print(X_train)
+y_train = labels_sb[:, 1]
+print(y_train)
+X_test = features_hip[:, 1:]
+y_test = labels_hip[:, 1]
+
+# Initialize and train the logistic regression model
+model = LogisticRegression(class_weight={0: 1, 1: 2}, max_iter=1000)  # Adjusted class_weight to match scale_pos_weight
+model.fit(X_train, y_train)
+
+# Make predictions (probability scores for ROC AUC)
+prediction = model.predict_proba(X_test)[:, 1]  # Get probabilities for the positive class
+
+# Calculate ROC AUC
+auc = roc_auc_score(y_test, prediction)
+print(auc)
